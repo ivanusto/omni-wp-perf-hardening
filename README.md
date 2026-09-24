@@ -45,8 +45,8 @@ mu-plugin 模式同樣有「設定 → Omni 效能強化」後台頁可用。兩
 
 參數有三層優先序：
 
-1. **`wp-config.php` 常數**（最高）— 定義於「That's all, stop editing!」註解之前，適合用版本控管配置的站台；已定義的常數會鎖定後台對應欄位
-2. **後台「設定 → Omni 效能強化」** — 存於 options，適合交給站台管理員自行調整
+1. **`wp-config.php` 常數**（最高）：定義於「That's all, stop editing!」註解之前，適合用版本控管配置的站台；已定義的常數會鎖定後台對應欄位
+2. **後台「設定 → Omni 效能強化」**：存於 options，適合交給站台管理員自行調整
 3. **內建預設值**
 
 常數命名規則為 `PH_` + 下表鍵名大寫，例如後台的「作者頁收斂」對應 `PH_AUTHOR_HARDENING`。
@@ -71,9 +71,9 @@ mu-plugin 模式同樣有「設定 → Omni 效能強化」後台頁可用。兩
 
 #### oEmbed 的兩段式設定
 
-1.7.0 之前只有單一的 `PH_DISABLE_OEMBED`，同時移除外部探索與自家端點。後者會讓「貼上自家文章網址自動變成卡片」的內部嵌入失效——WordPress 的內部嵌入依賴 `wp_oembed_register_route`（`/wp-json/oembed/1.0/embed` 端點）、`wp_oembed_add_discovery_links`（`<head>` 的 `json+oembed` 連結）與 `/embed/` 的 rewrite rule，三者缺一即壞，故拆成兩個開關並將路由改為預設保留。
+1.7.0 之前只有單一的 `PH_DISABLE_OEMBED`，同時移除外部探索與自家端點。後者會讓「貼上自家文章網址自動變成卡片」的內部嵌入失效。WordPress 的內部嵌入依賴 `wp_oembed_register_route`（`/wp-json/oembed/1.0/embed` 端點）、`wp_oembed_add_discovery_links`（`<head>` 的 `json+oembed` 連結）與 `/embed/` 的 rewrite rule，三者缺一即壞，故拆成兩個開關並將路由改為預設保留。
 
-`/embed/` 的爬取成本改以標頭收斂：保留路由時，該端點會送出 `X-Robots-Tag: noindex, follow` 與 `Cache-Control: public, max-age=3600, s-maxage=86400`，重複抓取由 CDN 邊緣吸收。**刻意不用 `Disallow`**——爬蟲被擋在門外就讀不到 `noindex`，既有的 `/embed/` 網址反而可能以「已建立索引但遭封鎖」的狀態長期滯留；`Disallow: /*/embed/` 僅在 `PH_DISABLE_OEMBED_ROUTES` 為 `true`（端點確實已移除）時才會寫入 robots.txt。
+`/embed/` 的爬取成本改以標頭收斂：保留路由時，該端點會送出 `X-Robots-Tag: noindex, follow` 與 `Cache-Control: public, max-age=3600, s-maxage=86400`，重複抓取由 CDN 邊緣吸收。**刻意不用 `Disallow`**，因為爬蟲被擋在門外就讀不到 `noindex`，既有的 `/embed/` 網址反而可能以「已建立索引但遭封鎖」的狀態長期滯留；`Disallow: /*/embed/` 僅在 `PH_DISABLE_OEMBED_ROUTES` 為 `true`（端點確實已移除）時才會寫入 robots.txt。
 
 **既有的 `PH_DISABLE_OEMBED` 仍然有效**，會同時鎖定上述兩個欄位，`wp-config.php` 不需修改。若站台使用內部嵌入，將其改為 `false`、或移除後改用細分常數：
 
@@ -96,7 +96,7 @@ define( 'PH_DISABLE_OEMBED_ROUTES', false );
 | `PH_SEARCH_LATIN_MAX` | `20` | 非中日韓長字串的垃圾判定門檻，`0` 停用 |
 | `PH_SEARCH_NO_FOUND_ROWS` | `false` | 搜尋查詢略過總筆數計算。**開啟會使搜尋分頁連結消失**（見下方說明） |
 
-`PH_SEARCH_TITLE_ONLY` 是效能與涵蓋率的取捨，自 1.9.0 起預設為 `false`（涵蓋率優先）。設為 `true` 時掃描成本大幅下降——中文新聞站的關鍵字多半出現在標題——但只寫在內文的詞一律搜尋不到，使用者搜得到什麼會取決於編輯有沒有把該詞放進標題。維持 `false` 則搜尋回到對 `post_content` 做 `LIKE '%關鍵字%'`，亦即本外掛原本要收斂的全表掃描，文章數多的站台請觀察 DB 負載。垃圾關鍵字過濾、`post_type` / `post_status` 限縮等其餘防護不受此設定影響，兩種取捨下都持續生效。
+`PH_SEARCH_TITLE_ONLY` 是效能與涵蓋率的取捨，自 1.9.0 起預設為 `false`（涵蓋率優先）。設為 `true` 時掃描成本大幅下降（中文新聞站的關鍵字多半出現在標題），但只寫在內文的詞一律搜尋不到，使用者搜得到什麼會取決於編輯有沒有把該詞放進標題。維持 `false` 則搜尋回到對 `post_content` 做 `LIKE '%關鍵字%'`，亦即本外掛原本要收斂的全表掃描，文章數多的站台請觀察 DB 負載。垃圾關鍵字過濾、`post_type` / `post_status` 限縮等其餘防護不受此設定影響，兩種取捨下都持續生效。
 
 需要「內文也搜得到、又不要全表掃描」者，正解是改用專用搜尋索引（Relevanssi、Elasticsearch 等）；本外掛只能壓低原生 `LIKE` 搜尋的成本，無法讓它同時又快又完整。
 
@@ -143,7 +143,7 @@ define( 'PH_DISABLE_OEMBED_ROUTES', false );
 
 ## 已知的相容性事項
 
-- **`PH_SECONDARY_NO_FOUND_ROWS` 會讓部分佈景主題與頁面建構器的文章清單變成空白。** 這是本外掛唯一可能造成版面「整塊消失」的設定，因此預設關閉。原理是 `no_found_rows` 會使 `found_posts` 與 `max_num_pages` 為 `0`，而不少工具會據此判斷要不要輸出清單——例如 **Elementor 的文章 widget 在 `found_posts` 為 `0` 時會直接中止渲染**，連容器與「找不到文章」提示都不會產生，站長只會看到一片空白。OceanWP + Elementor Pro 的組合已確認會發生。開啟後請逐一巡視首頁、彙整頁與所有含文章清單的頁面，確認都正常再上線。
+- **`PH_SECONDARY_NO_FOUND_ROWS` 會讓部分佈景主題與頁面建構器的文章清單變成空白。** 這是本外掛唯一可能造成版面「整塊消失」的設定，因此預設關閉。原理是 `no_found_rows` 會使 `found_posts` 與 `max_num_pages` 為 `0`，而不少工具會據此判斷要不要輸出清單。例如 **Elementor 的文章 widget 在 `found_posts` 為 `0` 時會直接中止渲染**，連容器與「找不到文章」提示都不會產生，站長只會看到一片空白。OceanWP + Elementor Pro 的組合已確認會發生。開啟後請逐一巡視首頁、彙整頁與所有含文章清單的頁面，確認都正常再上線。
 - **作者頁與日期封存頁的分頁連結會隱藏。** `no_found_rows` 使 `max_num_pages` 為 0，佈景主題因此不輸出上下頁連結。標籤／分類法頁已用 term 的既有 `count` 還原總頁數，不受影響；作者頁與日期頁沒有等價的便宜計數，且深層分頁本就標記 `noindex`，故維持現狀。
 - **前台的 Heartbeat script 已停用。** 極少數外掛（如前台即時通知類）依賴前台 Heartbeat，若有此需求將 `PH_HEARTBEAT_TUNING` 設為 `false`。
 - **REST 型外掛不受逾時限制。** TTS、翻譯、AI 類外掛常透過 `register_rest_route` 呼叫外部 API，此時 `is_admin()` 為 `false`。本外掛已排除 REST / AJAX / cron / WP-CLI / 已登入者，若仍遇到 `cURL error 28`，將 `PH_HTTP_THROTTLE` 設為 `false`。
@@ -204,15 +204,17 @@ sudo grep -c 'executing too slow' /var/log/php8.4-fpm.log
 
 效能問題往往不只一處，以下項目需要在 WordPress 之外處理：
 
-- **wp-cron 由訪客觸發** — 於 `wp-config.php` 設定 `DISABLE_WP_CRON`，改由系統 cron 執行 `wp cron event run --due-now`
-- **`pm.max_children` 過高** — 在低核心數機器上過度並行會造成 CPU 爭用，反而使所有請求變慢
-- **CDN 未快取 HTML** — 多數 CDN 預設不快取 HTML，需明確建立快取規則
-- **軟 404** — 主題若將失效網址重導向到回應 200 的頁面，搜尋引擎會永久保留失效索引
-- **原站可被繞過 CDN 直連** — 需以共用密鑰標頭或防火牆政策限制來源
+- **wp-cron 由訪客觸發**：於 `wp-config.php` 設定 `DISABLE_WP_CRON`，改由系統 cron 執行 `wp cron event run --due-now`
+- **`pm.max_children` 過高**：在低核心數機器上過度並行會造成 CPU 爭用，反而使所有請求變慢
+- **CDN 未快取 HTML**：多數 CDN 預設不快取 HTML，需明確建立快取規則
+- **軟 404**：主題若將失效網址重導向到回應 200 的頁面，搜尋引擎會永久保留失效索引
+- **原站可被繞過 CDN 直連**：需以共用密鑰標頭或防火牆政策限制來源
 
 ## 姊妹作品
 
-[Omni Webmaster & SEO Suite](https://wordpress.org/plugins/omni-webmaster-seo-suite/)（已上架 WordPress.org）為同團隊出品的 SEO 與站長工具，與本外掛互補：本外掛負責效能與爬取收斂，SEO Suite 負責曝光與索引。
+- [Omni Webmaster & SEO Suite](https://github.com/ivanusto/omni-webmaster-seo-suite)（[已上架 WordPress.org](https://wordpress.org/plugins/omni-webmaster-seo-suite/)）：同一作者的 SEO 與站長工具，與本外掛互補。本外掛負責效能與爬取收斂，SEO Suite 負責曝光與索引，包括單篇文章的 meta description、Open Graph 與結構化資料。
+- [Just Lang](https://github.com/ivanusto/just-lang)：給「每種語言各做一頁」網站用的多語系外掛，負責 `html lang`、含 `x-default` 的 `hreflang`、`og:locale`、語言切換器，以及不影響整頁快取的語言偵測。
+- [Just Share](https://github.com/ivanusto/just-share)：不會被擋廣告套件藏起來的分享按鈕與延伸閱讀，以伺服器輸出的純連結與內嵌 SVG 組成，不向第三方發出請求。
 
 ## 授權
 

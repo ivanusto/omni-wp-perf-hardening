@@ -8,27 +8,31 @@ Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Tames expensive WordPress endpoints — search scans, archive queries, low-value feeds, oEmbed, XML-RPC — with CDN-friendly cache headers.
+Tames expensive WordPress endpoints (search scans, archive queries, low-value feeds, oEmbed, XML-RPC) with CDN-friendly cache headers.
 
 == Description ==
 
 Built for large, crawl-heavy content sites (news, media, aggregators) where bot traffic on dynamic endpoints eats database CPU and PHP-FPM workers.
 
-* **Search hardening** — filters junk search probes (length, word count, invalid UTF-8, long non-CJK strings) and narrows the query to indexed columns. Two sharper optimisations are opt-in, because each one costs you something visible: matching titles and excerpts only (WP 6.2+) stops finding keywords that live in post bodies, and skipping the result count hides search pagination.
-* **Archive slimming** — drops `SQL_CALC_FOUND_ROWS` on tag/author/date archives; tag archive pagination is restored from the stored term count at zero cost. The same optimisation for widget and page-builder queries is available as an opt-in setting.
-* **Endpoint cache headers** — correct `Cache-Control` / `X-Robots-Tag` for feeds, search, tag pages, author pages, deep pagination and 404s, so your CDN can absorb bot traffic.
-* **Feed policy** — three modes (cache / strict / off) for low-value feeds; author, search and comment feeds can return 410.
-* **Author page hardening** — a single switch for author-page noindex, author feed 410 and the robots.txt `/author/` block. Off by default, since most sites want author archives indexed.
-* **oEmbed** — two separate switches: external discovery (off by default, no probing of arbitrary URLs) and this site's own oEmbed endpoints and `/embed/` routes (kept by default, since WordPress needs them to embed your own posts). `/embed/` pages are sent as `noindex` with a long CDN cache instead of being blocked.
+* **Search hardening**: filters junk search probes (length, word count, invalid UTF-8, long non-CJK strings) and narrows the query to indexed columns. Two sharper optimisations are opt-in, because each one costs you something visible: matching titles and excerpts only (WP 6.2+) stops finding keywords that live in post bodies, and skipping the result count hides search pagination.
+* **Archive slimming**: drops `SQL_CALC_FOUND_ROWS` on tag/author/date archives; tag archive pagination is restored from the stored term count at zero cost. The same optimisation for widget and page-builder queries is available as an opt-in setting.
+* **Endpoint cache headers**: correct `Cache-Control` / `X-Robots-Tag` for feeds, search, tag pages, author pages, deep pagination and 404s, so your CDN can absorb bot traffic.
+* **Feed policy**: three modes (cache / strict / off) for low-value feeds; author, search and comment feeds can return 410.
+* **Author page hardening**: a single switch for author-page noindex, author feed 410 and the robots.txt `/author/` block. Off by default, since most sites want author archives indexed.
+* **oEmbed**: two separate switches: external discovery (off by default, no probing of arbitrary URLs) and this site's own oEmbed endpoints and `/embed/` routes (kept by default, since WordPress needs them to embed your own posts). `/embed/` pages are sent as `noindex` with a long CDN cache instead of being blocked.
 * **Heartbeat tuning, XML-RPC disabling, REST user enumeration blocking, frontend external HTTP timeout cap, managed virtual robots.txt, removal of remote-fetching dashboard news widgets.**
 
-Every feature has its own on/off switch — nothing is forced on you.
+Every feature has its own on/off switch, so nothing is forced on you.
 
 Settings live in **Settings → Omni Performance Hardening** (admin UI). Any setting can also be pinned via a `PH_*` constant in `wp-config.php`; pinned constants lock the corresponding admin field. Priority: constants > admin settings > defaults.
 
 The plugin also works as a must-use plugin: drop `omni-performance-hardening.php` into `wp-content/mu-plugins/`.
 
-**Sister plugin**: [Omni Webmaster & SEO Suite](https://wordpress.org/plugins/omni-webmaster-seo-suite/) — SEO and webmaster tooling from the same team. This plugin keeps your site fast and crawl-efficient; the SEO suite handles visibility and indexing.
+**Sister plugins** from the same author:
+
+* [Omni Webmaster & SEO Suite](https://wordpress.org/plugins/omni-webmaster-seo-suite/): SEO and webmaster tooling. This plugin keeps your site fast and crawl-efficient; the SEO suite handles visibility and indexing, including meta description, Open Graph and structured data on single posts.
+* [Just Lang](https://github.com/ivanusto/just-lang): multilingual signals for sites that build each language version as its own page: html lang, hreflang with x-default, og:locale, a language switcher and cache-friendly language detection.
+* [Just Share](https://github.com/ivanusto/just-share): share buttons and related posts that ad blockers leave alone, built from plain server-rendered links and inline SVG with no third-party requests.
 
 Full documentation (Traditional Chinese): https://github.com/ivanusto/omni-wp-perf-hardening
 
@@ -46,7 +50,7 @@ The main feed and category feeds are always kept. Check which feed paths your pa
 
 = A post list on my site went blank. =
 
-Turn off "Skip counts on widget queries". That setting drops the total-row count on secondary queries, which sets `found_posts` to 0; page builders that read that value — Elementor's post widgets in particular — stop rendering the list entirely. It is off by default for this reason.
+Turn off "Skip counts on widget queries". That setting drops the total-row count on secondary queries, which sets `found_posts` to 0; page builders that read that value, Elementor's post widgets in particular, stop rendering the list entirely. It is off by default for this reason.
 
 = Search results collapsed to a single page. =
 
@@ -63,18 +67,18 @@ The frontend HTTP timeout cap excludes REST, AJAX, cron, WP-CLI and logged-in us
 == Changelog ==
 
 = 1.9.0 =
-* "Match titles and excerpts only" (`PH_SEARCH_TITLE_ONLY`) now defaults to off. Matching titles only made search results depend on whether an editor happened to put the word in the headline; keywords in the body were simply unfindable. Coverage now wins by default. Turning it on brings back the sharp reduction in scan cost — and the `LIKE '%keyword%'` scan over post content it avoids — so enable it if search load is a real problem on your site.
+* "Match titles and excerpts only" (`PH_SEARCH_TITLE_ONLY`) now defaults to off. Matching titles only made search results depend on whether an editor happened to put the word in the headline; keywords in the body were simply unfindable. Coverage now wins by default. Turning it on brings back the sharp reduction in scan cost, because it avoids the `LIKE '%keyword%'` scan over post content, so enable it if search load is a real problem on your site.
 * "Result pages limit" (`PH_SEARCH_MAX_PAGES`) now defaults to 10, up from 3. With pagination links visible again after 1.8.0, a 3-page cap meant visitors could see links to pages that return nothing. 0 removes the cap.
 * **Existing sites**: saving the settings screen once writes every field to the database, after which default changes no longer reach your site. To pick these up, untick "Match titles and excerpts only" and set "Result pages limit" to 10 yourself, or define the constants in `wp-config.php`. New installs get the new defaults directly.
-* Every field on the settings screen now carries a description. Six of them — both keyword length limits, results per page, archive posts per page and the two Heartbeat intervals — were bare number boxes with no explanation, and the limits applied on save (per-page minimum 1, Heartbeat clamped to 15-300) were invisible.
+* Every field on the settings screen now carries a description. Six of them (both keyword length limits, results per page, archive posts per page and the two Heartbeat intervals) were bare number boxes with no explanation, and the limits applied on save (per-page minimum 1, Heartbeat clamped to 15-300) were invisible.
 * The three count-related settings are described in plain language instead of `SQL_CALC_FOUND_ROWS` and `found_posts`, which meant nothing to the person deciding whether to tick the box. The archive one also spells out that tag and taxonomy archives keep their pagination while author and date archives do not.
 
 = 1.8.0 =
 * Skipping the total-row count on search queries is now an opt-in setting ("Skip result count on search", `PH_SEARCH_NO_FOUND_ROWS`), off by default. It previously always applied while search hardening was on: `found_posts` stayed 0, themes drew no pagination links, and a search spanning a hundred pages looked like a single page. Same treatment as the 1.6.0 widget-query change.
-* If your visitors should page deep into search results, also check "Result pages limit" (default 3) — pages beyond it intentionally return no results; 0 disables the cap.
+* If your visitors should page deep into search results, also check "Result pages limit" (default 3): pages beyond it intentionally return no results; 0 disables the cap.
 
 = 1.7.0 =
-* Fixed: disabling oEmbed also broke embeds of the site's own posts. The single `PH_DISABLE_OEMBED` switch removed the oEmbed REST route, the `json+oembed` discovery link and the `/embed/` rewrite rule — WordPress needs all three to render an internal embed, so the cards silently degraded to plain links.
+* Fixed: disabling oEmbed also broke embeds of the site's own posts. The single `PH_DISABLE_OEMBED` switch removed the oEmbed REST route, the `json+oembed` discovery link and the `/embed/` rewrite rule. WordPress needs all three to render an internal embed, so the cards silently degraded to plain links.
 * The switch is now split in two: external oEmbed discovery (off by default, unchanged) and this site's own oEmbed endpoints and `/embed/` routes (kept by default). `PH_DISABLE_OEMBED` still works and pins both fields; the new constants are `PH_DISABLE_OEMBED_EXTERNAL` and `PH_DISABLE_OEMBED_ROUTES`. If you had "Disable oEmbed" ticked, only the external half carries over on upgrade and internal embeds start working again.
 * New: `/embed/` pages are sent with `X-Robots-Tag: noindex, follow` and `Cache-Control: public, max-age=3600, s-maxage=86400`, so crawl load is absorbed by the CDN rather than blocked. `Disallow: /*/embed/` is written to robots.txt only when the routes are actually removed.
 * New: rewrite rules are rebuilt automatically after a version upgrade, including in mu-plugin mode where no activation hook exists.
@@ -83,7 +87,7 @@ The frontend HTTP timeout cap excludes REST, AJAX, cron, WP-CLI and logged-in us
 * Skipping row counts on widget and page-builder queries is now an opt-in setting, off by default. It previously always applied and could silently blank out post lists in themes and page builders that read `found_posts` (Elementor's post widgets among them).
 
 = 1.5.0 =
-* Author page hardening is now off by default — most sites want their author archives indexed. Enable it in the settings when you don't.
+* Author page hardening is now off by default, because most sites want their author archives indexed. Enable it in the settings when you don't.
 * Dashboard news widget removal is now an opt-out setting instead of always-on behaviour.
 * Corrected the sister plugin's name to Omni Webmaster & SEO Suite.
 
